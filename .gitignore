@@ -1,0 +1,113 @@
+# =========================
+# General
+# =========================
+.DS_Store
+Thumbs.db
+*.log
+logs/
+*.tmp
+*.swp
+*.swo
+
+# =========================
+# Environment files (IMPORTANT)
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Go (Golang)
+# =========================
+# binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# build folders
+bin/
+dist/
+build/
+
+# coverage
+coverage.out
+*.coverprofile
+
+# Go workspace
+go.work
+go.work.sum
+
+# vendor (optional, comment if you use vendor)
+vendor/
+
+# =========================
+# React / Node.js
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# build output
+dist/
+build/
+
+# cache
+.cache/
+.next/
+.out/
+
+# Vite
+.vite/
+
+# =========================
+# Tailwind
+# =========================
+# Tailwind generates no special ignore usually
+# but keep build output ignored
+
+# =========================
+# PostgreSQL
+# =========================
+*.sql
+*.dump
+*.backup
+
+# if local postgres data folder exists
+postgres-data/
+pgdata/
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.iml
+
+# =========================
+# Docker
+# =========================
+docker-compose.override.yml
+
+# =========================
+# Testing
+# =========================
+coverage/
+.coverage
+
+# =========================
+# Misc build outputs
+# =========================
+tmp/
+temp/
+
+# =========================
+# OS generated
+# =========================
+ehthumbs.db
+Desktop.ini
