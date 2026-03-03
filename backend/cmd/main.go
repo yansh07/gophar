@@ -14,32 +14,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func allowedOriginsFromEnv() map[string]struct{} {
-	origins := []string{
-		"http://localhost:5173",
-		"http://127.0.0.1:5173",
-	}
-
-	if fe := strings.TrimSpace(os.Getenv("FRONTEND_URL")); fe != "" {
-		origins = append(origins, fe)
-	}
-
-	if raw := os.Getenv("CORS_ALLOWED_ORIGINS"); raw != "" {
-		for _, origin := range strings.Split(raw, ",") {
-			origin = strings.TrimSpace(origin)
-			if origin != "" {
-				origins = append(origins, origin)
-			}
-		}
-	}
-
-	set := make(map[string]struct{}, len(origins))
-	for _, o := range origins {
-		set[o] = struct{}{}
-	}
-	return set
-}
-
 func main() {
 	_ = godotenv.Load()
 
@@ -52,19 +26,26 @@ func main() {
 	r := gin.Default()
 	_ = r.SetTrustedProxies(nil)
 
-	allowedOrigins := allowedOriginsFromEnv()
-	log.Printf("CORS allowed origins: %v", keys(allowedOrigins))
-
+	// Configure robust CORS
 	r.Use(cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {
-			if origin == "" {
+			
+			if strings.HasPrefix(origin, "http://localhost") || strings.HasPrefix(origin, "http://127.0.0.1") {
 				return true
 			}
-			_, ok := allowedOrigins[origin]
-			return ok
+			if origin == "https://gophar.vercel.app" {
+				return true
+			}
+			envFrontend := strings.TrimRight(os.Getenv("FRONTEND_URL"), "/")
+			if envFrontend != "" && origin == envFrontend {
+				return true
+			}
+
+			log.Printf("Blocked CORS attempt from: %s", origin)
+			return false
 		},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
