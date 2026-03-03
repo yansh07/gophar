@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 // Mocking Link for standalone preview (Replace with 'react-router-dom' in your app)
 interface LinkProps {
@@ -21,11 +21,6 @@ export default function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-interface LoginFormData {
-    email: string;
-    password: string;
-}
 
 const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
