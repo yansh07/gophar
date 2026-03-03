@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { setUserData } from '../utils/auth';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
+
 interface LinkProps {
   to: string;
   children: ReactNode;
@@ -23,20 +27,32 @@ export default function App() {
   const navigate = useNavigate();
 
 const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
-    try {
-        console.log('Login:', { email, password });
-        await new Promise((r) => setTimeout(r, 1000));
-        // Simulate error for demo if empty
-        if(!email) throw new Error();
-    } catch {
-        setError('Invalid email or password. Please try again.');
-    } finally {
-        setLoading(false);
+  try {
+    const res = await fetch(`${API_BASE_URL}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json().catch(() => ({} as Record<string, unknown>));
+
+    if (!res.ok || typeof data.token !== 'string') {
+      throw new Error((data.error as string) || 'Invalid email or password. Please try again.');
     }
+
+    localStorage.setItem('access_token', data.token);
+    setUserData({ email });
+
+    navigate('/dashboard', { replace: true });
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Invalid email or password. Please try again.');
+  } finally {
+    setLoading(false);
+  }
 };
 
   return (

@@ -1,7 +1,10 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { setUserData } from '../utils/auth'
 import '../index.css'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 
 export default function Signup() {
   const [email, setEmail] = useState('')
@@ -11,6 +14,8 @@ export default function Signup() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const navigate = useNavigate()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -29,11 +34,34 @@ export default function Signup() {
     setLoading(true)
 
     try {
-      // TODO: replace with actual API call
-      console.log('Signup:', { email, password })
-      await new Promise((r) => setTimeout(r, 1000))
-    } catch {
-      setError('Something went wrong. Please try again.')
+      const signupRes = await fetch(`${API_BASE_URL}/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const signupData = await signupRes.json().catch(() => ({} as Record<string, unknown>))
+      if (!signupRes.ok) {
+        throw new Error((signupData.error as string) || 'Signup failed.')
+      }
+
+      // auto-login right after signup
+      const loginRes = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const loginData = await loginRes.json().catch(() => ({} as Record<string, unknown>))
+      if (!loginRes.ok || typeof loginData.token !== 'string') {
+        throw new Error((loginData.error as string) || 'Signup succeeded but login failed.')
+      }
+
+      localStorage.setItem('access_token', loginData.token)
+      setUserData({ email })
+      navigate('/dashboard', { replace: true })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }
