@@ -3,8 +3,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-// import Dashboard from "./pages/Dashboard";
-// import Profile from "./pages/Profile";
+import Dashboard from "./pages/Dashboard";
 import { isUserAuthenticated } from "./utils/auth";
 
 function PublicRoute() {
@@ -15,13 +14,13 @@ function PublicRoute() {
   return <Outlet />;
 }
 
-// function ProtectedRoute() {
-//   if (!isUserAuthenticated()) {
-//     return <Navigate to="/" replace />;
-//   }
+function ProtectedRoute() {
+  if (!isUserAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
 
-//   return <Outlet />;
-// }
+  return <Outlet />;
+}
 
 function App() {
   return (
@@ -33,10 +32,9 @@ function App() {
           <Route path="/signup" element={<Signup />} />
         </Route>
 
-        {/* <Route element={<ProtectedRoute />}>
+        <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/profile" element={<Profile />} />
-        </Route> */}
+        </Route>
       </Routes>
     </BrowserRouter>
   );
