@@ -15,6 +15,7 @@ import {
   Mail,
 } from 'lucide-react'
 import '../index.css'
+import { useNavigate } from 'react-router-dom'
 
 /* ──────────────────── tiny animated ping dot ──────────────────── */
 function PingDot({ status = 'up' }: { status?: 'up' | 'down' }) {
@@ -150,13 +151,14 @@ function FaqItem({ q, a }: { q: string; a: string }) {
    APP
    ═══════════════════════════════════════════════════ */
 function App() {
+const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-[#09090b] font-[Inter,sans-serif] text-white selection:bg-orange-500/30">
       {/* ─── NAVBAR ─── */}
       <nav className="sticky top-0 z-50 border-b border-white/[0.04] bg-[#09090b]/80 backdrop-blur-lg">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500 text-sm font-black">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500 text-sm font-black cursor-pointer" onClick={() => navigate("/")}>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-rail-symbol-icon lucide-rail-symbol"><path d="M5 15h14"/><path d="M5 9h14"/><path d="m14 20-5-5 6-6-5-5"/></svg>
             </div>
             <span className="text-lg font-bold tracking-tight">gophar</span>
@@ -169,10 +171,10 @@ function App() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="rounded-lg px-4 py-2 text-sm text-neutral-300 transition hover:text-white">
+            <button className="cursor-pointer rounded-lg px-4 py-2 text-sm text-neutral-300 transition hover:text-white" onClick={() => navigate("/login")}>
               Log In
             </button>
-            <button className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600">
+            <button className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600 cursor-pointer" onClick={() => navigate("/signup")}>
               Sign Up Free
             </button>
           </div>
@@ -206,7 +208,7 @@ function App() {
             </p>
 
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <button className="group flex items-center gap-2 rounded-xl bg-orange-500 px-7 py-3.5 text-sm font-semibold shadow-xl shadow-orange-500/25 transition hover:bg-orange-600">
+              <button className="group flex items-center gap-2 rounded-xl bg-orange-500 px-7 py-3.5 text-sm font-semibold shadow-xl shadow-orange-500/25 transition hover:bg-orange-600 cursor-pointer" onClick={() => navigate("/signup")}>
                 Start Monitoring — It's Free
                 <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
               </button>
@@ -396,7 +398,7 @@ function App() {
             Your uptime isn't gonna monitor itself — well, now it will. Let Gophar do the staring
             so you can do the building.
           </p>
-          <button className="group mt-8 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-8 py-4 text-sm font-semibold shadow-xl shadow-orange-500/25 transition hover:bg-orange-600">
+          <button className="group mt-8 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-8 py-4 text-sm font-semibold shadow-xl shadow-orange-500/25 transition hover:bg-orange-600 cursor-pointer" onClick={() => navigate("/signup")}>
             Get Started — Free Forever*
             <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
           </button>

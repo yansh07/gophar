@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import type { ReactNode } from 'react';
-
-// Mocking Link for standalone preview (Replace with 'react-router-dom' in your app)
+import { useNavigate } from 'react-router-dom';
 interface LinkProps {
   to: string;
   children: ReactNode;
@@ -21,6 +20,7 @@ export default function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
 const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -138,7 +138,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> 
         <p className="mt-5 text-center text-[13px] text-neutral-500 sm:mt-6 sm:text-sm">
           Don't have an account?{' '}
           <Link to="/signup" className="font-medium text-orange-400 transition hover:text-orange-300 underline-offset-4 hover:underline">
-            Sign up free
+            <span onClick={() => navigate("/signup")} className='px-1'>Sign up free</span>
           </Link>
         </p>
       </div>
