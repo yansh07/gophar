@@ -18,8 +18,10 @@ import {
   BarChart3,
   Bell,
 } from 'lucide-react'
-import { logoutUser, getUserData } from '../utils/auth'
+import { logoutUser, getUserData, getAccessToken } from '../utils/auth'
 import '../index.css'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
 
 /* ─── types ─── */
 interface Monitor {
@@ -49,25 +51,6 @@ const FREQ_OPTIONS = [
   { value: 10, label: 'Every 10 min' },
   { value: 15, label: 'Every 15 min' },
   { value: 30, label: 'Every 30 min' },
-]
-
-/* ─── mock seed data ─── */
-const MOCK_MONITORS: Monitor[] = [
-  { id: '1', url: 'https://google.com', frequency: 5, status: 'up', latency: 12, lastChecked: new Date().toISOString(), createdAt: new Date().toISOString() },
-  { id: '2', url: 'https://api.gophar.dev', frequency: 1, status: 'up', latency: 42, lastChecked: new Date().toISOString(), createdAt: new Date().toISOString() },
-  { id: '3', url: 'https://sketchy-saas.io', frequency: 5, status: 'down', latency: null, lastChecked: new Date().toISOString(), createdAt: new Date().toISOString() },
-  { id: '4', url: 'https://myportfolio.lol', frequency: 10, status: 'up', latency: 89, lastChecked: new Date().toISOString(), createdAt: new Date().toISOString() },
-]
-
-const MOCK_LOGS: LogEntry[] = [
-  { id: 'l1', monitorId: '1', url: 'https://google.com', status: 200, latency: 12, checkedAt: new Date().toISOString() },
-  { id: 'l2', monitorId: '2', url: 'https://api.gophar.dev', status: 200, latency: 42, checkedAt: new Date(Date.now() - 60000).toISOString() },
-  { id: 'l3', monitorId: '3', url: 'https://sketchy-saas.io', status: 503, latency: 0, checkedAt: new Date(Date.now() - 120000).toISOString() },
-  { id: 'l4', monitorId: '4', url: 'https://myportfolio.lol', status: 200, latency: 89, checkedAt: new Date(Date.now() - 180000).toISOString() },
-  { id: 'l5', monitorId: '1', url: 'https://google.com', status: 200, latency: 14, checkedAt: new Date(Date.now() - 300000).toISOString() },
-  { id: 'l6', monitorId: '3', url: 'https://sketchy-saas.io', status: 522, latency: 0, checkedAt: new Date(Date.now() - 360000).toISOString() },
-  { id: 'l7', monitorId: '2', url: 'https://api.gophar.dev', status: 200, latency: 38, checkedAt: new Date(Date.now() - 420000).toISOString() },
-  { id: 'l8', monitorId: '1', url: 'https://google.com', status: 200, latency: 11, checkedAt: new Date(Date.now() - 600000).toISOString() },
 ]
 
 /* ═══════════════════════════════════════════════════════
@@ -209,6 +192,7 @@ function AddMonitorModal({
 /* ═══════════════════════════════════════════════════════
    DELETE CONFIRM MODAL
    ═══════════════════════════════════════════════════════ */
+
 function DeleteModal({
   open,
   url,
@@ -263,51 +247,144 @@ export default function Dashboard() {
   // tab
   const [tab, setTab] = useState<'monitors' | 'logs'>('monitors')
 
+  /* ─── fetch helpers ─── */
+  const authHeaders = () => {
+    const token = getAccessToken()
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    }
+  }
+
+  const fetchMonitors = async () => {
+    const res = await fetch(`${API_BASE_URL}/api/monitors`, { headers: authHeaders() })
+    if (!res.ok) return []
+    const data = await res.json()
+    const items = data ?? []
+    return items.map((m: Record<string, string | number>) => {
+      const statusCode = parseInt(String(m.last_status), 10)
+      let status: 'up' | 'down' | 'pending' = 'pending'
+      if (m.last_status) {
+        status = statusCode >= 200 && statusCode < 400 ? 'up' : 'down'
+      }
+      return {
+        id: String(m.ID),
+        url: String(m.url),
+        frequency: Math.round(Number(m.frequency) / 60),
+        status,
+        latency: null,
+        lastChecked: m.last_checked ? String(m.last_checked) : null,
+        createdAt: String(m.CreatedAt),
+      } as Monitor
+    })
+  }
+
+  const fetchLogs = async () => {
+    const res = await fetch(`${API_BASE_URL}/api/logs`, { headers: authHeaders() })
+    if (!res.ok) return []
+    const data = await res.json()
+    const items = data.logs ?? []
+    return items.map((l: Record<string, string | number>) => ({
+      id: String(l.id),
+      monitorId: String(l.monitor_id),
+      url: String(l.url),
+      status: parseInt(String(l.status), 10) || 0,
+      latency: parseInt(String(l.latency), 10) || 0,
+      checkedAt: String(l.checked_at),
+    } as LogEntry))
+  }
+
   /* ─── initial load ─── */
   const didLoad = useRef(false)
   useEffect(() => {
     if (didLoad.current) return
     didLoad.current = true
-    // TODO: replace with actual API call — GET /api/monitors + GET /api/logs
     const load = async () => {
-      await new Promise((r) => setTimeout(r, 600))
-      setMonitors(MOCK_MONITORS)
-      setLogs(MOCK_LOGS)
+      const token = getAccessToken()
+      if (!token) { navigate('/login'); return }
+      const [mons, lgs] = await Promise.all([fetchMonitors(), fetchLogs()])
+      setMonitors(mons)
+      setLogs(lgs)
       setLoading(false)
     }
     load()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    // TODO: replace with actual API call
-    await new Promise((r) => setTimeout(r, 600))
-    setMonitors(MOCK_MONITORS)
-    setLogs(MOCK_LOGS)
+    const [mons, lgs] = await Promise.all([fetchMonitors(), fetchLogs()])
+    setMonitors(mons)
+    setLogs(lgs)
     setRefreshing(false)
   }
 
   /* ─── add monitor ─── */
-  const handleAddMonitor = (url: string, frequency: number) => {
-    // TODO: replace with POST /api/monitors
-    const newMon: Monitor = {
-      id: Date.now().toString(),
-      url,
-      frequency,
-      status: 'pending',
-      latency: null,
-      lastChecked: null,
-      createdAt: new Date().toISOString(),
+  const handleAddMonitor = async (url: string, frequency: number) => {
+    try {
+      const token = getAccessToken();
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      const res = await fetch(`${API_BASE_URL}/api/monitors`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          url,
+          frequency: frequency * 60 // convert minutes to seconds
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const createdMonitor = data.data;
+
+        const newMon: Monitor = {
+          id: createdMonitor.ID.toString(),
+          url: createdMonitor.url,
+          frequency: createdMonitor.frequency / 60,
+          status: 'pending',
+          latency: null,
+          lastChecked: null,
+          createdAt: createdMonitor.CreatedAt,
+        }
+        setMonitors((prev) => [newMon, ...prev])
+      } else {
+        console.error('Failed to add monitor:', res.statusText);
+      }
+    } catch (error) {
+      console.error('Error adding monitor:', error);
     }
-    setMonitors((prev) => [newMon, ...prev])
   }
 
   /* ─── delete monitor ─── */
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteTarget) return
-    // TODO: replace with DELETE /api/monitors/:id
-    setMonitors((prev) => prev.filter((m) => m.id !== deleteTarget.id))
-    setLogs((prev) => prev.filter((l) => l.monitorId !== deleteTarget.id))
+    try {
+      const token = getAccessToken()
+      if (!token) { navigate('/login'); return }
+
+      const res = await fetch(`${API_BASE_URL}/api/monitors/${deleteTarget.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (res.ok) {
+        setMonitors((prev) => prev.filter((m) => m.id !== deleteTarget.id))
+        setLogs((prev) => prev.filter((l) => l.monitorId !== deleteTarget.id))
+      } else {
+        console.error('Failed to delete monitor:', res.statusText)
+      }
+    } catch (error) {
+      console.error('Error deleting monitor:', error)
+    }
     setDeleteTarget(null)
   }
 
