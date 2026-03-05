@@ -4,6 +4,7 @@ import (
 	"gophar/pkg/database"
 	"gophar/pkg/handlers"
 	"gophar/pkg/middleware"
+	"gophar/pkg/services"
 	"log"
 	"os"
 	"strings"
@@ -26,10 +27,9 @@ func main() {
 	r := gin.Default()
 	_ = r.SetTrustedProxies(nil)
 
-	// Configure robust CORS
 	r.Use(cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {
-			
+
 			if strings.HasPrefix(origin, "http://localhost") || strings.HasPrefix(origin, "http://127.0.0.1") {
 				return true
 			}
@@ -58,13 +58,18 @@ func main() {
 	protected.Use(middleware.AuthMiddleware())
 	{
 		protected.POST("/monitors", handlers.AddMonitor)
-		protected.GET("/monitors", handlers.GetMonitor)
+		protected.GET("/monitors", handlers.GetUserMonitors)
+		protected.GET("/monitor/:id/stats", handlers.GetMonitorStats)
+		protected.GET("/logs", handlers.GetAllLogs)
+		protected.DELETE("/monitors/:id", handlers.DeleteMonitor)
 	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
+
+	services.StartInternalMonitoring()
 
 	log.Println("Server running on port", port)
 	log.Fatal(r.Run(":" + port))

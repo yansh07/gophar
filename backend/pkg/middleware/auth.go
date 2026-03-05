@@ -33,6 +33,9 @@ func AuthMiddleware() gin.HandlerFunc{
 			return
 		}
 		c.Set("userEmail", claims["email"])
+		if userID, ok := claims["userID"].(float64); ok {
+			c.Set("userID", uint(userID))
+		}
 		c.Next()
 	}
 }
