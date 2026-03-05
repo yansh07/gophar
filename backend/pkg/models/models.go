@@ -17,6 +17,7 @@ type Monitor struct {
 	URL string `gorm:"not null" json:"url"`
 	Frequency int `gorm:"default:60" json:"frequency"` //seconds mein
 	IsActive bool `gorm:"default:true" json:"is_active"`
+	LastStatus string `gorm:"default:unknown"`
 }
 
 type HealthLog struct {

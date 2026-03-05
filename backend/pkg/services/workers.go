@@ -53,6 +53,23 @@ func pingAndLog(mon models.Monitor) {
 
 	latencyMs := duration.Milliseconds()
 
+	// determine current status
+	currentStatus := "Down"
+	if err == nil && statusCode >= 200 && statusCode < 400 {
+		currentStatus = "Up"
+	}
+
+	// alert on state change
+	if currentStatus == "Down" && mon.LastStatus != "Down" {
+		SendTelegramAlert(mon.URL, fmt.Sprintf("🚨 DOWN! Status: %d", statusCode))
+	} else if currentStatus == "Up" && mon.LastStatus == "Down" {
+		SendTelegramAlert(mon.URL, "✅ RECOVERED! Back up and running.")
+	}
+
+	// update LastStatus on the monitor
+	database.DB.Model(&mon).Update("last_status", currentStatus)
+
+	// save health log
 	log := models.HealthLog{
 		MonitorId: mon.ID,
 		Status:    strconv.Itoa(statusCode),
