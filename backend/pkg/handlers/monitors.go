@@ -28,9 +28,9 @@ func AddMonitor(c *gin.Context) {
 		return
 	}
 
-	// quick reachability check
+	// quick reachability check — any response means the host exists
 	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Head(parsedURL.String())
+	resp, err := client.Get(parsedURL.String())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "URL is not reachable. Check the URL and try again."})
 		return
