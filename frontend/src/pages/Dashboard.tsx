@@ -101,23 +101,31 @@ function AddMonitorModal({
 }: {
   open: boolean
   onClose: () => void
-  onAdd: (url: string, frequency: number) => void
+  onAdd: (url: string, frequency: number) => Promise<string | null>
 }) {
   const [url, setUrl] = useState('')
   const [freq, setFreq] = useState(5)
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   if (!open) return null
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError('')
     try {
       const u = new URL(url.startsWith('http') ? url : `https://${url}`)
-      onAdd(u.toString(), freq)
+      setSubmitting(true)
+      const err = await onAdd(u.toString(), freq)
+      setSubmitting(false)
+      if (err) {
+        setError(err)
+        return
+      }
       setUrl('')
       setFreq(5)
       onClose()
     } catch {
+      setSubmitting(false)
       setError('Enter a valid URL (e.g. https://google.com)')
     }
   }
@@ -179,10 +187,11 @@ function AddMonitorModal({
 
         <button
           onClick={handleSubmit}
-          className="group flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-2.5 text-sm font-semibold shadow-lg shadow-orange-500/20 transition hover:bg-orange-600"
+          disabled={submitting}
+          className="group flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-2.5 text-sm font-semibold shadow-lg shadow-orange-500/20 transition hover:bg-orange-600 disabled:opacity-50"
         >
-          Start Monitoring
-          <Zap size={16} className="transition-transform group-hover:scale-110" />
+          {submitting ? 'Checking…' : 'Start Monitoring'}
+          {!submitting && <Zap size={16} className="transition-transform group-hover:scale-110" />}
         </button>
       </div>
     </div>
@@ -320,12 +329,12 @@ export default function Dashboard() {
   }
 
   /* ─── add monitor ─── */
-  const handleAddMonitor = async (url: string, frequency: number) => {
+  const handleAddMonitor = async (url: string, frequency: number): Promise<string | null> => {
     try {
       const token = getAccessToken();
       if (!token) {
         navigate('/login');
-        return;
+        return 'Not authenticated';
       }
 
       const res = await fetch(`${API_BASE_URL}/api/monitors`, {
@@ -340,8 +349,9 @@ export default function Dashboard() {
         })
       });
 
+      const data = await res.json();
+
       if (res.ok) {
-        const data = await res.json();
         const createdMonitor = data.data;
 
         const newMon: Monitor = {
@@ -354,11 +364,13 @@ export default function Dashboard() {
           createdAt: createdMonitor.CreatedAt,
         }
         setMonitors((prev) => [newMon, ...prev])
+        return null;
       } else {
-        console.error('Failed to add monitor:', res.statusText);
+        return data.error || 'Failed to add monitor';
       }
     } catch (error) {
       console.error('Error adding monitor:', error);
+      return 'Network error. Please try again.';
     }
   }
 
