@@ -2,17 +2,28 @@ package services
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
 )
 
+func CheckTelegramConfig() {
+	token := os.Getenv("TELEGRAM_BOT_TOKEN")
+	chatID := os.Getenv("TELEGRAM_CHAT_ID")
+	if token == "" || chatID == "" {
+		log.Println("⚠️  TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set — Telegram alerts disabled")
+	} else {
+		log.Println("✅ Telegram alerts configured")
+	}
+}
+
 func SendTelegramAlert(website string, status string) {
 	token := os.Getenv("TELEGRAM_BOT_TOKEN")
 	chatID := os.Getenv("TELEGRAM_CHAT_ID")
 	if token == "" || chatID == "" {
-		fmt.Printf("[alert] %s — %s (Telegram not configured)\n", website, status)
+		log.Printf("[alert] %s — %s (Telegram not configured)", website, status)
 		return
 	}
 
@@ -27,8 +38,8 @@ func SendTelegramAlert(website string, status string) {
 		"parse_mode": {"Markdown"},
 	})
 	if err != nil {
-		fmt.Printf("[alert] Failed to send Telegram alert for %s: %v\n", website, err)
+		log.Printf("[alert] Failed to send Telegram alert for %s: %v", website, err)
 		return
 	}
-	fmt.Printf("[alert] Telegram alert sent for: %s\n", website)
+	log.Printf("[alert] Telegram alert sent for: %s", website)
 }

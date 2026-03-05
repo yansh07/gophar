@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gophar/pkg/database"
 	"gophar/pkg/models"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -11,6 +12,7 @@ import (
 
 // StartInternalMonitoring ticks every 30s and checks which monitors are due.
 func StartInternalMonitoring() {
+	CheckTelegramConfig()
 	ticker := time.NewTicker(30 * time.Second)
 
 	go func() {
@@ -39,6 +41,7 @@ func checkDueMonitors() {
 }
 
 func pingAndLog(mon models.Monitor) {
+	log.Printf("[ping] Starting check for %s (lastStatus=%s)", mon.URL, mon.LastStatus)
 	client := &http.Client{Timeout: 10 * time.Second}
 
 	start := time.Now()
@@ -59,6 +62,8 @@ func pingAndLog(mon models.Monitor) {
 		currentStatus = "Up"
 	}
 
+	log.Printf("[ping] %s → %s (code=%d, took %dms, prev=%s)", mon.URL, currentStatus, statusCode, latencyMs, mon.LastStatus)
+
 	// alert on state change
 	if currentStatus == "Down" && mon.LastStatus != "Down" {
 		SendTelegramAlert(mon.URL, fmt.Sprintf("🚨 DOWN! Status: %d", statusCode))
@@ -70,16 +75,10 @@ func pingAndLog(mon models.Monitor) {
 	database.DB.Model(&mon).Update("last_status", currentStatus)
 
 	// save health log
-	log := models.HealthLog{
+	healthLog := models.HealthLog{
 		MonitorId: mon.ID,
 		Status:    strconv.Itoa(statusCode),
 		Latency:   strconv.FormatInt(latencyMs, 10),
 	}
-	database.DB.Create(&log)
-
-	if statusCode == 0 {
-		fmt.Printf("[ping] %s → error (took %dms)\n", mon.URL, latencyMs)
-	} else {
-		fmt.Printf("[ping] %s → %d (took %dms)\n", mon.URL, statusCode, latencyMs)
-	}
+	database.DB.Create(&healthLog)
 }
